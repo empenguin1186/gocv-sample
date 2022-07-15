@@ -1,0 +1,9 @@
+.ONESHELL:
+.PHONY: docker
+
+GOCV_VERSION?="v0.31.0"
+OPENCV_VERSION?=4.6.0
+GOVERSION?=1.16.2
+
+docker:
+	docker build --build-arg OPENCV_VERSION=$(OPENCV_VERSION) --build-arg GOVERSION=$(GOVERSION) .
