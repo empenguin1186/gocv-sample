@@ -12,6 +12,9 @@ package openapi
 import (
 	"context"
 	"errors"
+	"gocv.io/x/gocv"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 )
@@ -20,15 +23,62 @@ import (
 // This service should implement the business logic for every endpoint for the DefaultApi API.
 // Include any external packages or services that will be required by this service.
 type DefaultApiService struct {
+	classifier *gocv.CascadeClassifier
 }
 
 // NewDefaultApiService creates a default api service
-func NewDefaultApiService() DefaultApiServicer {
-	return &DefaultApiService{}
+func NewDefaultApiService(classifierFileName string) (DefaultApiServicer, error) {
+
+	// load classifier file for face detection
+	//xmlFile := "./data/haarcascade_frontalface_default.xml"
+	classifier := gocv.NewCascadeClassifier()
+	if !classifier.Load(classifierFileName) {
+		return &DefaultApiService{}, errors.New("cannot load classifier file")
+	}
+
+	return &DefaultApiService{
+		classifier: &classifier,
+	}, nil
 }
 
 // V1AuthPost - Returns whether specified user is identified.
 func (s *DefaultApiService) V1AuthPost(ctx context.Context, fileName *os.File) (ImplResponse, error) {
+
+	data, err := ioutil.ReadAll(fileName)
+	if err != nil {
+		log.Printf("cannot read image file err=%v", err)
+		return Response(500, V1AuthPost500Response{
+			Code:        "ET-5001",
+			Message:     "cannot read image file",
+			Description: "cannot read image file",
+		}), nil
+	}
+
+	log.Printf("image file(%s) byte array=%d", fileName.Name(), len(data))
+
+	// load face image
+	img, err := gocv.IMDecode(data, gocv.IMReadColor)
+	if err != nil {
+		log.Printf("cannot decode image file err=%v", err)
+		return Response(500, V1AuthPost500Response{
+			Code:        "ET-5003",
+			Message:     "cannot decode image file",
+			Description: "cannot decode image file",
+		}), nil
+	}
+	defer img.Close()
+
+	// execute face detection
+	rects := s.classifier.DetectMultiScale(img)
+
+	if len(rects) == 0 {
+		return Response(403, V1AuthPost403Response{
+			Code:        "EC-4001",
+			Message:     "cannot detect face",
+			Description: "cannot detect face",
+		}), nil
+	}
+
 	// TODO - update V1AuthPost with the required logic for this service method.
 	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
@@ -41,5 +91,5 @@ func (s *DefaultApiService) V1AuthPost(ctx context.Context, fileName *os.File) (
 	//TODO: Uncomment the next line to return response Response(500, V1AuthPost500Response{}) or use other options such as http.Ok ...
 	//return Response(500, V1AuthPost500Response{}), nil
 
-	return Response(http.StatusNotImplemented, nil), errors.New("V1AuthPost method not implemented")
+	return Response(http.StatusNotImplemented, V1AuthPost200Response{Result: "OK"}), nil
 }
