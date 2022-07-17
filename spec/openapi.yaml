@@ -1,0 +1,67 @@
+openapi: 3.0.0
+info:
+  title: Face Detection And Recognition API
+  description: Detect faces and recognize people from a specified image.
+  version: 0.1.9
+servers:
+  - url: http://api.example.com
+    description: Optional server description, e.g. Main (production) server
+  - url: http://localhost:8080
+    description: Optional server description, e.g. Internal staging server for development
+paths:
+  /v1/auth:
+    post:
+      summary: Returns whether specified user is identified.
+      description: Optional extended description in CommonMark or HTML.
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                fileName:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Result of identification
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+                    example: OK
+        '403':
+          description: Identification failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: EC-0001
+                  message:
+                    type: string
+                    example: identifacation failed
+                  description:
+                    type: string
+                    example: no face detected
+        '500':
+          description: Unexpected error occurred
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: EP-0001
+                  message:
+                    type: string
+                    example: identifacation failed
+                  description:
+                    type: string
+                    example: external api request failed
