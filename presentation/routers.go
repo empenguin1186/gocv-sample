@@ -120,8 +120,7 @@ func readFileHeaderToTempFile(fileHeader *multipart.FileHeader) (*os.File, error
 		return nil, err
 	}
 
-	// TODO file を再オープンする方法があればコメントアウトを外す
-	//defer file.Close()
+	defer file.Close()
 
 	file.Write(fileBytes)
 

@@ -63,16 +63,23 @@ func (c *DefaultApiController) V1AuthPost(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	fileNameParam, err := ReadFormFileToTempFile(r, "fileName")
+	// TODO デフォルトで実装されていた箇所. 今後不要であれば削除
+	//fileNameParam, err := ReadFormFileToTempFile(r, "fileName")
+	//if err != nil {
+	//	c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+	//	return
+	//}
+
+	_, fileHeader, err := r.FormFile("fileName")
 	if err != nil {
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
 
 	// TODO ファイルを再オープンする方法があればこの処理は削除
-	defer fileNameParam.Close()
+	//defer fileNameParam.Close()
 
-	result, err := c.service.V1AuthPost(r.Context(), fileNameParam)
+	result, err := c.service.V1AuthPost(r.Context(), fileHeader)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

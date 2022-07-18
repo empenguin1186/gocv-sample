@@ -12,11 +12,12 @@ package openapi
 import (
 	"context"
 	"errors"
+	"gocv-sample/constant"
 	"gocv.io/x/gocv"
 	"io/ioutil"
 	"log"
+	"mime/multipart"
 	"net/http"
-	"os"
 )
 
 // DefaultApiService is a service that implements the logic for the DefaultApiServicer
@@ -30,7 +31,6 @@ type DefaultApiService struct {
 func NewDefaultApiService(classifierFileName string) (DefaultApiServicer, error) {
 
 	// load classifier file for face detection
-	//xmlFile := "./data/haarcascade_frontalface_default.xml"
 	classifier := gocv.NewCascadeClassifier()
 	if !classifier.Load(classifierFileName) {
 		return &DefaultApiService{}, errors.New("cannot load classifier file")
@@ -42,28 +42,43 @@ func NewDefaultApiService(classifierFileName string) (DefaultApiServicer, error)
 }
 
 // V1AuthPost - Returns whether specified user is identified.
-func (s *DefaultApiService) V1AuthPost(ctx context.Context, fileName *os.File) (ImplResponse, error) {
-
-	data, err := ioutil.ReadAll(fileName)
+func (s *DefaultApiService) V1AuthPost(ctx context.Context, fileHeader *multipart.FileHeader) (ImplResponse, error) {
+	// open request file
+	file, err := fileHeader.Open()
 	if err != nil {
-		log.Printf("cannot read image file err=%v", err)
-		return Response(500, V1AuthPost500Response{
-			Code:        "ET-5001",
-			Message:     "cannot read image file",
-			Description: "cannot read image file",
+		log.Printf("failed to open image file. err=%v", err)
+
+		errorCode := constant.ET5001
+		return Response(errorCode.StatusCode, V1AuthPost500Response{
+			Code:        errorCode.FullCode(),
+			Message:     errorCode.Message,
+			Description: errorCode.Detail,
+		}), nil
+	}
+	defer file.Close()
+
+	imgBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.Printf("failed to read image file. err=%v", err)
+
+		errorCode := constant.ET5002
+		return Response(errorCode.StatusCode, V1AuthPost500Response{
+			Code:        errorCode.FullCode(),
+			Message:     errorCode.Message,
+			Description: errorCode.Detail,
 		}), nil
 	}
 
-	log.Printf("image file(%s) byte array=%d", fileName.Name(), len(data))
-
-	// load face image
-	img, err := gocv.IMDecode(data, gocv.IMReadColor)
+	// decode face image for face detection
+	img, err := gocv.IMDecode(imgBytes, gocv.IMReadColor)
 	if err != nil {
 		log.Printf("cannot decode image file err=%v", err)
-		return Response(500, V1AuthPost500Response{
-			Code:        "ET-5003",
-			Message:     "cannot decode image file",
-			Description: "cannot decode image file",
+
+		errorCode := constant.ET5003
+		return Response(errorCode.StatusCode, V1AuthPost500Response{
+			Code:        errorCode.FullCode(),
+			Message:     errorCode.Message,
+			Description: errorCode.Detail,
 		}), nil
 	}
 	defer img.Close()
@@ -71,25 +86,21 @@ func (s *DefaultApiService) V1AuthPost(ctx context.Context, fileName *os.File) (
 	// execute face detection
 	rects := s.classifier.DetectMultiScale(img)
 
-	if len(rects) == 0 {
-		return Response(403, V1AuthPost403Response{
-			Code:        "EC-4001",
-			Message:     "cannot detect face",
-			Description: "cannot detect face",
+	if len(rects) < 1 {
+		log.Printf("failed to detect face form image. err=%d", len(rects))
+
+		errorCode := constant.EC4001
+		return Response(errorCode.StatusCode, V1AuthPost500Response{
+			Code:        errorCode.FullCode(),
+			Message:     errorCode.Message,
+			Description: errorCode.Detail,
 		}), nil
 	}
 
-	// TODO - update V1AuthPost with the required logic for this service method.
-	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	//TODO: Uncomment the next line to return response Response(200, V1AuthPost200Response{}) or use other options such as http.Ok ...
-	//return Response(200, V1AuthPost200Response{}), nil
-
-	//TODO: Uncomment the next line to return response Response(403, V1AuthPost403Response{}) or use other options such as http.Ok ...
-	//return Response(403, V1AuthPost403Response{}), nil
-
-	//TODO: Uncomment the next line to return response Response(500, V1AuthPost500Response{}) or use other options such as http.Ok ...
-	//return Response(500, V1AuthPost500Response{}), nil
+	// output face detection result
+	for i, e := range rects {
+		log.Printf("rectangle(%d) axis -> %s\n", i+1, e.String())
+	}
 
 	return Response(http.StatusNotImplemented, V1AuthPost200Response{Result: "OK"}), nil
 }
