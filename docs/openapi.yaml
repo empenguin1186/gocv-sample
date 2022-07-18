@@ -20,7 +20,7 @@ paths:
               type: object
               properties:
                 image:
-                  description: ユーザの顔画像ファイル
+                  description: face image
                   type: string
                   format: binary
       responses:
