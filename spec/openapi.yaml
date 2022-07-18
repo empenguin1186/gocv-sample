@@ -19,7 +19,7 @@ paths:
             schema:
               type: object
               properties:
-                fileName:
+                image:
                   type: string
                   format: binary
       responses:
@@ -45,7 +45,7 @@ paths:
                     example: EC-0001
                   message:
                     type: string
-                    example: identifacation failed
+                    example: identification failed
                   description:
                     type: string
                     example: no face detected
@@ -61,7 +61,7 @@ paths:
                     example: EP-0001
                   message:
                     type: string
-                    example: identifacation failed
+                    example: identification failed
                   description:
                     type: string
                     example: external api request failed
