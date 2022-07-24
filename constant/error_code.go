@@ -27,4 +27,5 @@ var (
 	ET5004 = ErrorCode{500, ET, 5004, "failed to search image", "failed to search image"}
 
 	EC4001 = ErrorCode{403, EC, 4001, "cannot detect face", "failed to open image file."}
+	EC4002 = ErrorCode{403, EC, 4002, "no faces match", "no faces match"}
 )

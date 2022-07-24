@@ -118,6 +118,21 @@ func (s *DefaultApiService) V1AuthPost(ctx context.Context, fileHeader *multipar
 	}
 	log.Printf("search output: %v", output)
 
+	numOfFacesMatch := len(output.FaceMatches)
+	log.Printf("%d faces match", numOfFacesMatch)
+
+	if err != nil {
+		errorCode := constant.EC4002
+		return Response(errorCode.StatusCode, V1AuthPost500Response{
+			Code:        errorCode.FullCode(),
+			Message:     errorCode.Message,
+			Description: errorCode.Detail,
+		}), nil
+	}
+
+	for _, e := range output.FaceMatches {
+		log.Printf("imageId: %v, similarity: %v", e.Face.ImageId, e.Similarity)
+	}
 	return Response(http.StatusNotImplemented, V1AuthPost200Response{Result: "OK"}), nil
 }
 
