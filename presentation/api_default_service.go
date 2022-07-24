@@ -12,6 +12,9 @@ package openapi
 import (
 	"context"
 	"errors"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/rekognition"
+	"github.com/aws/aws-sdk-go-v2/service/rekognition/types"
 	"gocv-sample/constant"
 	"gocv.io/x/gocv"
 	"io/ioutil"
@@ -102,5 +105,44 @@ func (s *DefaultApiService) V1AuthPost(ctx context.Context, fileHeader *multipar
 		log.Printf("rectangle(%d) axis -> %s\n", i+1, e.String())
 	}
 
+	output, err := s.SearchFacesByImage(imgBytes)
+	if err != nil {
+		log.Printf("failed to search image from aws rekognition err=%v", err)
+
+		errorCode := constant.ET5004
+		return Response(errorCode.StatusCode, V1AuthPost500Response{
+			Code:        errorCode.FullCode(),
+			Message:     errorCode.Message,
+			Description: errorCode.Detail,
+		}), nil
+	}
+	log.Printf("search output: %v", output)
+
 	return Response(http.StatusNotImplemented, V1AuthPost200Response{Result: "OK"}), nil
+}
+
+func (s *DefaultApiService) SearchFacesByImage(imgBytes []byte) (*rekognition.SearchFacesByImageOutput, error) {
+	ctx := context.TODO()
+
+	// https://github.com/awsdocs/aws-doc-sdk-examples/tree/main/gov2/rekognition/DetectFaces
+	cfg, err := config.LoadDefaultConfig(ctx)
+	if err != nil {
+		return &rekognition.SearchFacesByImageOutput{}, err
+	}
+	cfg.Region = "ap-northeast-1"
+
+	client := rekognition.NewFromConfig(cfg)
+	collectionId := "gocv-sample-collection"
+	var faceMatchThreshold float32 = 95.000000
+	var maxFaces int32 = 5
+	input := &rekognition.SearchFacesByImageInput{
+		CollectionId:       &collectionId,
+		FaceMatchThreshold: &faceMatchThreshold,
+		Image: &types.Image{
+			Bytes: imgBytes,
+		},
+		MaxFaces: &maxFaces,
+	}
+
+	return client.SearchFacesByImage(ctx, input)
 }
