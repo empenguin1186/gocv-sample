@@ -19,6 +19,9 @@ paths:
             schema:
               type: object
               properties:
+                storeId:
+                  description: 店舗ID
+                  type: string
                 image:
                   description: ユーザの顔画像ファイル
                   type: string
