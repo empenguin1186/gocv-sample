@@ -45,7 +45,7 @@ func NewDefaultApiService(classifierFileName string) (DefaultApiServicer, error)
 }
 
 // V1AuthPost - Returns whether specified user is identified.
-func (s *DefaultApiService) V1AuthPost(ctx context.Context, fileHeader *multipart.FileHeader) (ImplResponse, error) {
+func (s *DefaultApiService) V1AuthPost(ctx context.Context, storeIdParam string, fileHeader *multipart.FileHeader) (ImplResponse, error) {
 	// open request file
 	file, err := fileHeader.Open()
 	if err != nil {
@@ -105,6 +105,8 @@ func (s *DefaultApiService) V1AuthPost(ctx context.Context, fileHeader *multipar
 		log.Printf("rectangle(%d) axis -> %s\n", i+1, e.String())
 	}
 
+	log.Printf("storeId: %s", storeIdParam)
+
 	output, err := s.SearchFacesByImage(imgBytes)
 	if err != nil {
 		log.Printf("failed to search image from aws rekognition err=%v", err)
@@ -133,7 +135,7 @@ func (s *DefaultApiService) V1AuthPost(ctx context.Context, fileHeader *multipar
 	for _, e := range output.FaceMatches {
 		log.Printf("imageId: %v, similarity: %v", e.Face.ImageId, e.Similarity)
 	}
-	return Response(http.StatusNotImplemented, V1AuthPost200Response{Result: "OK"}), nil
+	return Response(http.StatusOK, nil), nil
 }
 
 func (s *DefaultApiService) SearchFacesByImage(imgBytes []byte) (*rekognition.SearchFacesByImageOutput, error) {
