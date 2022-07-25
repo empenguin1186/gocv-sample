@@ -29,14 +29,6 @@ paths:
       responses:
         '200':
           description: Result of identification
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  result:
-                    type: string
-                    example: OK
         '403':
           description: Identification failed
           content:
