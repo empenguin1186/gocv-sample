@@ -5,6 +5,6 @@ ENV GOPATH /go
 COPY . /go/src/gocv-sample/
 
 WORKDIR /go/src/gocv-sample
-RUN go build -tags example -o /build/server ./cmd/
+RUN go build -tags example -o /build/server ./cmd/server.go
 
 CMD ["/build/server"]
