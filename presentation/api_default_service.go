@@ -107,7 +107,7 @@ func (s *DefaultApiService) V1AuthPost(ctx context.Context, storeIdParam string,
 
 	log.Printf("storeId: %s", storeIdParam)
 
-	// search image from Amazon Rekogition.
+	// search image from Amazon Rekognition.
 	output, err := s.SearchFacesByImage(imgBytes)
 	if err != nil {
 		log.Printf("failed to search image from aws rekognition err=%v", err)
