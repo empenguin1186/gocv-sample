@@ -6,27 +6,9 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	runtime "github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-lambda-go/lambdacontext"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/lambda"
 	"log"
 	"os"
 )
-
-func callLambda() (string, error) {
-	input := &lambda.GetAccountSettingsInput{}
-
-	sess, err := session.NewSession()
-	if err != nil {
-		return "", err
-	}
-	//client := lambda.New(session.New())
-	client := lambda.New(sess)
-
-	req, resp := client.GetAccountSettingsRequest(input)
-	err = req.Send()
-	output, _ := json.Marshal(resp.AccountUsage)
-	return string(output), err
-}
 
 func handleRequest(ctx context.Context, event events.SQSEvent) (string, error) {
 	// event
@@ -46,12 +28,8 @@ func handleRequest(ctx context.Context, event events.SQSEvent) (string, error) {
 	// context method
 	deadline, _ := ctx.Deadline()
 	log.Printf("DEADLINE: %s", deadline)
-	// AWS SDK call
-	usage, err := callLambda()
-	if err != nil {
-		return "ERROR", err
-	}
-	return usage, nil
+
+	return "Hello World!", nil
 }
 
 func main() {
