@@ -6,7 +6,7 @@ OPENCV_VERSION?=4.6.0
 GOVERSION?=1.16.2
 
 docker:
-	docker build --build-arg OPENCV_VERSION=$(OPENCV_VERSION) --build-arg GOVERSION=$(GOVERSION) .
+	docker build -t gocv-sample --build-arg OPENCV_VERSION=$(OPENCV_VERSION) --build-arg GOVERSION=$(GOVERSION) .
 
 codegen:
 	docker run --rm -v "$(CURDIR):/app" openapitools/openapi-generator-cli generate \
