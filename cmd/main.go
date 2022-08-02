@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/rekognition"
 	"github.com/aws/aws-sdk-go-v2/service/rekognition/types"
 	"gocv-sample/constant"
+	"gocv-sample/domain"
 	openapi "gocv-sample/presentation"
 	"gocv.io/x/gocv"
 	"io/ioutil"
@@ -20,19 +21,6 @@ import (
 	"mime/multipart"
 	"net/http"
 )
-
-type MyError struct {
-	error
-	errorCode constant.ErrorCode
-}
-
-func NewMyError(error error, errorCode constant.ErrorCode) MyError {
-	return MyError{error: error, errorCode: errorCode}
-}
-
-func (m MyError) ErrorCode() constant.ErrorCode {
-	return m.errorCode
-}
 
 // FaceRecognizer service class for face detection and recognition
 type FaceRecognizer struct {
@@ -58,7 +46,7 @@ func (f *FaceRecognizer) Recognize(storeId string, fileHeader *multipart.FileHea
 	file, err := fileHeader.Open()
 	if err != nil {
 		log.Printf("failed to open image file. err=%v", err)
-		return NewMyError(err, constant.ET5001)
+		return domain.NewMyError(err, constant.ET5001)
 	}
 
 	log.Println("fileHeader.Open() succeeded.")
@@ -68,7 +56,7 @@ func (f *FaceRecognizer) Recognize(storeId string, fileHeader *multipart.FileHea
 	imgBytes, err := ioutil.ReadAll(file)
 	if err != nil {
 		log.Printf("failed to read image file. err=%v", err)
-		return NewMyError(err, constant.ET5002)
+		return domain.NewMyError(err, constant.ET5002)
 	}
 
 	// decode face image for face detection
@@ -76,7 +64,7 @@ func (f *FaceRecognizer) Recognize(storeId string, fileHeader *multipart.FileHea
 	img, err := gocv.IMDecode(imgBytes, gocv.IMReadColor)
 	if err != nil {
 		log.Printf("cannot decode image file err=%v", err)
-		return NewMyError(err, constant.ET5003)
+		return domain.NewMyError(err, constant.ET5003)
 	}
 	defer img.Close()
 
@@ -86,7 +74,7 @@ func (f *FaceRecognizer) Recognize(storeId string, fileHeader *multipart.FileHea
 	// see whether face detected
 	if len(rects) < 1 {
 		log.Printf("failed to detect face from image. err=%d", len(rects))
-		return NewMyError(err, constant.EC4001)
+		return domain.NewMyError(err, constant.EC4001)
 	}
 
 	// output face detection result
@@ -101,13 +89,13 @@ func (f *FaceRecognizer) Recognize(storeId string, fileHeader *multipart.FileHea
 	output, err := f.SearchFacesByImage(imgBytes)
 	if err != nil {
 		log.Printf("failed to search image from aws rekognition err=%v", err)
-		return NewMyError(err, constant.ET5004)
+		return domain.NewMyError(err, constant.ET5004)
 	}
 	numOfFacesMatch := len(output.FaceMatches)
 	log.Printf("%d faces match", numOfFacesMatch)
 
 	if numOfFacesMatch < 1 {
-		return NewMyError(err, constant.EC4002)
+		return domain.NewMyError(err, constant.EC4002)
 	}
 
 	for _, e := range output.FaceMatches {
@@ -178,16 +166,16 @@ func (r *RecognizeController) PostAuth(request events.APIGatewayProxyRequest) (e
 	log.Printf("PARAM: %s", param)
 
 	err = r.faceRecognizer.Recognize(param, fileHeader)
-	if myError, ok := err.(MyError); ok {
+	if myError, ok := err.(domain.MyError); ok {
 		body := &openapi.V1AuthPost500Response{
-			Code:        myError.errorCode.FullCode(),
-			Message:     myError.errorCode.Message,
-			Description: myError.errorCode.Detail,
+			Code:        myError.ErrorCode().FullCode(),
+			Message:     myError.ErrorCode().Message,
+			Description: myError.ErrorCode().Detail,
 		}
 		byteBody, _ := json.Marshal(body)
 
 		return events.APIGatewayProxyResponse{
-			StatusCode: myError.errorCode.StatusCode,
+			StatusCode: myError.ErrorCode().StatusCode,
 			Body:       string(byteBody),
 		}, nil
 	}

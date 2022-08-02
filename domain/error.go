@@ -2,15 +2,15 @@ package domain
 
 import "gocv-sample/constant"
 
-type Error struct {
-	code constant.ErrorCode
-	err  error
+type MyError struct {
+	error
+	errorCode constant.ErrorCode
 }
 
-func NewError(code constant.ErrorCode, err error) Error {
-	return Error{code, err}
+func NewMyError(error error, errorCode constant.ErrorCode) MyError {
+	return MyError{error: error, errorCode: errorCode}
 }
 
-func (e Error) Error() string {
-	return e.Error()
+func (m MyError) ErrorCode() constant.ErrorCode {
+	return m.errorCode
 }
