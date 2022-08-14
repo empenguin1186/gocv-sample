@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/rekognition/types"
 	"gocv-sample/constant"
 	"gocv.io/x/gocv"
+	"image"
 	"io/ioutil"
 	"log"
 	"mime/multipart"
@@ -86,8 +87,15 @@ func (s *DefaultApiService) V1AuthPost(ctx context.Context, storeIdParam string,
 	}
 	defer img.Close()
 
+	// resize image
+	resizedImg := gocv.NewMatWithSize(640, 480, img.Type())
+	defer resizedImg.Close()
+	gocv.Resize(img, &resizedImg, image.Point{X: 640, Y: 480}, 0, 0, gocv.InterpolationDefault)
+	log.Printf("resized width: %d", resizedImg.Cols())
+	log.Printf("resized height: %d", resizedImg.Rows())
+
 	// execute face detection
-	rects := s.classifier.DetectMultiScale(img)
+	rects := s.classifier.DetectMultiScale(resizedImg)
 
 	if len(rects) < 1 {
 		log.Printf("failed to detect face form image. err=%d", len(rects))
@@ -108,7 +116,7 @@ func (s *DefaultApiService) V1AuthPost(ctx context.Context, storeIdParam string,
 	log.Printf("storeId: %s", storeIdParam)
 
 	// search image from Amazon Rekognition.
-	output, err := s.SearchFacesByImage(imgBytes)
+	output, err := s.SearchFacesByImage(resizedImg.ToBytes())
 	if err != nil {
 		log.Printf("failed to search image from aws rekognition err=%v", err)
 
