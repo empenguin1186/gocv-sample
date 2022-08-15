@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func server() {
+func main() {
 	log.Printf("Server started")
 
 	classifierFileName := "./data/haarcascade_frontalface_default.xml"
