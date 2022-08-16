@@ -160,7 +160,7 @@ func (s *DefaultApiService) SearchFacesByImage(imgBytes []byte) (*rekognition.Se
 	client := rekognition.NewFromConfig(cfg)
 	collectionId := "gocv-sample-collection"
 	var faceMatchThreshold float32 = 95.000000
-	var maxFaces int32 = 5
+	var maxFaces int32 = 2
 	input := &rekognition.SearchFacesByImageInput{
 		CollectionId:       &collectionId,
 		FaceMatchThreshold: &faceMatchThreshold,
