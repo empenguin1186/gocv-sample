@@ -17,7 +17,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/rekognition/types"
 	"gocv-sample/constant"
 	"gocv.io/x/gocv"
-	"image"
 	"io/ioutil"
 	"log"
 	"mime/multipart"
@@ -88,9 +87,10 @@ func (s *DefaultApiService) V1AuthPost(ctx context.Context, storeIdParam string,
 	defer img.Close()
 
 	// resize image
-	resizedImg := gocv.NewMatWithSize(640, 480, img.Type())
+	//resizedImg := gocv.NewMatWithSize(640, 480, img.Type())
+	resizedImg := img
 	defer resizedImg.Close()
-	gocv.Resize(img, &resizedImg, image.Point{X: 640, Y: 480}, 0, 0, gocv.InterpolationDefault)
+	//gocv.Resize(img, &resizedImg, image.Point{X: 640, Y: 480}, 0, 0, gocv.InterpolationDefault)
 	log.Printf("resized width: %d", resizedImg.Cols())
 	log.Printf("resized height: %d", resizedImg.Rows())
 
