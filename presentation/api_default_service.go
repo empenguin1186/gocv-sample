@@ -10,6 +10,7 @@
 package openapi
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -17,6 +18,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/rekognition/types"
 	"gocv-sample/constant"
 	"gocv.io/x/gocv"
+	"golang.org/x/image/draw"
+	"image"
+	"image/png"
 	"io/ioutil"
 	"log"
 	"mime/multipart"
@@ -72,6 +76,50 @@ func (s *DefaultApiService) V1AuthPost(ctx context.Context, storeIdParam string,
 		}), nil
 	}
 
+	// resize image
+	buffer := new(bytes.Buffer)
+	_, err = buffer.ReadFrom(file)
+	if err != nil {
+		log.Printf("cannot decode image file err=%v", err)
+
+		errorCode := constant.ET5003
+		return Response(errorCode.StatusCode, V1AuthPost500Response{
+			Code:        errorCode.FullCode(),
+			Message:     errorCode.Message,
+			Description: errorCode.Detail,
+		}), nil
+	}
+
+	imgSrc, t, err := image.Decode(buffer)
+	if err != nil {
+		log.Printf("cannot decode image file err=%v", err)
+
+		errorCode := constant.ET5003
+		return Response(errorCode.StatusCode, V1AuthPost500Response{
+			Code:        errorCode.FullCode(),
+			Message:     errorCode.Message,
+			Description: errorCode.Detail,
+		}), nil
+	}
+
+	rctSrc := imgSrc.Bounds()
+	log.Printf("Type of image: %v", t)
+	imgDst := image.NewRGBA(image.Rect(0, 0, rctSrc.Dx()/2, rctSrc.Dy()/2))
+	draw.CatmullRom.Scale(imgDst, imgDst.Bounds(), imgSrc, rctSrc, draw.Over, nil)
+
+	resizedBuffer := new(bytes.Buffer)
+	err = png.Encode(resizedBuffer, imgDst)
+	if err != nil {
+		log.Printf("cannot encode image file err=%v", err)
+
+		errorCode := constant.ET5003
+		return Response(errorCode.StatusCode, V1AuthPost500Response{
+			Code:        errorCode.FullCode(),
+			Message:     errorCode.Message,
+			Description: errorCode.Detail,
+		}), nil
+	}
+
 	// decode face image for face detection
 	img, err := gocv.IMDecode(imgBytes, gocv.IMReadColor)
 	if err != nil {
@@ -90,6 +138,7 @@ func (s *DefaultApiService) V1AuthPost(ctx context.Context, storeIdParam string,
 	//resizedImg := gocv.NewMatWithSize(640, 480, img.Type())
 	resizedImg := img
 	defer resizedImg.Close()
+	//image, err := resizedImg.ToImage()
 	//gocv.Resize(img, &resizedImg, image.Point{X: 640, Y: 480}, 0, 0, gocv.InterpolationDefault)
 	log.Printf("resized width: %d", resizedImg.Cols())
 	log.Printf("resized height: %d", resizedImg.Rows())
@@ -116,7 +165,8 @@ func (s *DefaultApiService) V1AuthPost(ctx context.Context, storeIdParam string,
 	log.Printf("storeId: %s", storeIdParam)
 
 	// search image from Amazon Rekognition.
-	output, err := s.SearchFacesByImage(resizedImg.ToBytes())
+	log.Printf("imgBytes length: %d, buf length: %d", len(imgBytes), len(resizedBuffer.Bytes()))
+	output, err := s.SearchFacesByImage(resizedBuffer.Bytes())
 	if err != nil {
 		log.Printf("failed to search image from aws rekognition err=%v", err)
 
