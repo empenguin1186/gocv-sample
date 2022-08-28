@@ -62,22 +62,8 @@ func (c *DefaultApiController) V1AuthPost(w http.ResponseWriter, r *http.Request
 		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
 		return
 	}
-	storeIdParam := r.FormValue("storeId")
 
-	// TODO デフォルトで実装されていた箇所. 今後不要であれば削除
-	//imageParam, err := ReadFormFileToTempFile(r, "image")
-	//if err != nil {
-	//	c.errorHandler(w, r, &ParsingError{Err: err}, nil)
-	//	return
-	//}
-
-	_, fileHeader, err := r.FormFile("image")
-	if err != nil {
-		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
-		return
-	}
-
-	result, err := c.service.V1AuthPost(r.Context(), storeIdParam, fileHeader)
+	result, err := c.service.V1AuthPost(r)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

@@ -10,8 +10,6 @@
 package openapi
 
 import (
-	"context"
-	"mime/multipart"
 	"net/http"
 )
 
@@ -27,5 +25,5 @@ type DefaultApiRouter interface {
 // while the service implementation can be ignored with the .openapi-generator-ignore file
 // and updated with the logic required for the API.
 type DefaultApiServicer interface {
-	V1AuthPost(context.Context, string, *multipart.FileHeader) (ImplResponse, error)
+	V1AuthPost(r *http.Request) (ImplResponse, error)
 }

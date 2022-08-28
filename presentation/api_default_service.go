@@ -23,7 +23,6 @@ import (
 	"image/png"
 	"io/ioutil"
 	"log"
-	"mime/multipart"
 	"net/http"
 )
 
@@ -49,11 +48,19 @@ func NewDefaultApiService(classifierFileName string) (DefaultApiServicer, error)
 }
 
 // V1AuthPost - Returns whether specified user is identified.
-func (s *DefaultApiService) V1AuthPost(ctx context.Context, storeIdParam string, fileHeader *multipart.FileHeader) (ImplResponse, error) {
-	// open request file
-	file, err := fileHeader.Open()
+func (s *DefaultApiService) V1AuthPost(r *http.Request) (ImplResponse, error) {
+	storeIdParam := r.FormValue("storeId")
+
+	// TODO デフォルトで実装されていた箇所. 今後不要であれば削除
+	//imageParam, err := ReadFormFileToTempFile(r, "image")
+	//if err != nil {
+	//	c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+	//	return
+	//}
+
+	file, _, err := r.FormFile("image")
 	if err != nil {
-		log.Printf("failed to open image file. err=%v", err)
+		log.Printf("invalid request with multi partform file. err=%v", err)
 
 		errorCode := constant.ET5001
 		return Response(errorCode.StatusCode, V1AuthPost500Response{
@@ -62,6 +69,19 @@ func (s *DefaultApiService) V1AuthPost(ctx context.Context, storeIdParam string,
 			Description: errorCode.Detail,
 		}), nil
 	}
+
+	// open request file
+	//file, err := fileHeader.Open()
+	//if err != nil {
+	//	log.Printf("failed to open image file. err=%v", err)
+	//
+	//	errorCode := constant.ET5001
+	//	return Response(errorCode.StatusCode, V1AuthPost500Response{
+	//		Code:        errorCode.FullCode(),
+	//		Message:     errorCode.Message,
+	//		Description: errorCode.Detail,
+	//	}), nil
+	//}
 	defer file.Close()
 
 	imgBytes, err := ioutil.ReadAll(file)
@@ -77,10 +97,15 @@ func (s *DefaultApiService) V1AuthPost(ctx context.Context, storeIdParam string,
 	}
 
 	// resize image
-	buffer := new(bytes.Buffer)
-	_, err = buffer.ReadFrom(file)
+	//buffer := new(bytes.Buffer)
+	//buffer := &bytes.Buffer{}
+	//_, err = buffer.ReadFrom(file)
+	myImg := &Image{
+		Buf: &bytes.Buffer{},
+	}
+	_, err = myImg.Buf.ReadFrom(file)
 	if err != nil {
-		log.Printf("cannot decode image file err=%v", err)
+		log.Printf("cannot read image file err=%v", err)
 
 		errorCode := constant.ET5003
 		return Response(errorCode.StatusCode, V1AuthPost500Response{
@@ -90,7 +115,8 @@ func (s *DefaultApiService) V1AuthPost(ctx context.Context, storeIdParam string,
 		}), nil
 	}
 
-	imgSrc, t, err := image.Decode(buffer)
+	log.Printf("buffer length=%d", len(myImg.Buf.Bytes()))
+	imgSrc, t, err := image.Decode(myImg.Buf)
 	if err != nil {
 		log.Printf("cannot decode image file err=%v", err)
 
@@ -221,4 +247,8 @@ func (s *DefaultApiService) SearchFacesByImage(imgBytes []byte) (*rekognition.Se
 	}
 
 	return client.SearchFacesByImage(ctx, input)
+}
+
+type Image struct {
+	Buf *bytes.Buffer
 }
